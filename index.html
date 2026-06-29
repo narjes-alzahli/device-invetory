@@ -1,0 +1,2041 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>نظام إدارة الأجهزة</title>
+<style>
+:root {
+  --primary: #1e3a8a;
+  --primary-light: #3b82f6;
+  --primary-pale: #dbeafe;
+  --secondary: #0f172a;
+  --accent: #f59e0b;
+  --bg: #f1f5f9;
+  --card: #ffffff;
+  --text: #1e293b;
+  --muted: #64748b;
+  --border: #e2e8f0;
+  --danger: #dc2626;
+  --danger-pale: #fee2e2;
+  --success: #16a34a;
+  --success-pale: #dcfce7;
+  --sidebar-w: 260px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:'Segoe UI',Tahoma,Arial,sans-serif;background:var(--bg);color:var(--text);display:flex;min-height:100vh;direction:rtl;}
+
+/* ── Sidebar ─────────────────────────────────── */
+.sidebar{width:var(--sidebar-w);background:var(--secondary);color:#fff;display:flex;flex-direction:column;position:fixed;top:0;right:0;height:100vh;z-index:100;box-shadow:-4px 0 20px rgba(0,0,0,.3);}
+.sb-header{padding:22px 20px;border-bottom:1px solid rgba(255,255,255,.08);}
+.sb-logo{font-size:17px;font-weight:800;color:var(--accent);letter-spacing:-.3px;}
+.sb-sub{font-size:11px;color:rgba(255,255,255,.4);margin-top:3px;}
+.sb-nav{flex:1;padding:12px 0;overflow-y:auto;}
+.nav-sec{padding:14px 18px 5px;font-size:10px;text-transform:uppercase;letter-spacing:.12em;color:rgba(255,255,255,.3);}
+.nav-item{display:flex;align-items:center;gap:12px;padding:11px 20px;cursor:pointer;transition:.2s;border-right:3px solid transparent;font-size:14px;color:rgba(255,255,255,.65);user-select:none;}
+.nav-item:hover{background:rgba(255,255,255,.06);color:#fff;}
+.nav-item.active{background:rgba(59,130,246,.18);border-right-color:var(--primary-light);color:#fff;}
+.nav-item .ni{font-size:17px;width:22px;text-align:center;}
+.sb-footer{padding:16px 20px;border-top:1px solid rgba(255,255,255,.08);font-size:11px;color:rgba(255,255,255,.3);text-align:center;}
+
+/* ── Main ─────────────────────────────────────── */
+.main{margin-right:var(--sidebar-w);flex:1;display:flex;flex-direction:column;min-height:100vh;}
+.topbar{background:var(--card);border-bottom:1px solid var(--border);padding:15px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50;}
+.page-title{font-size:19px;font-weight:700;}
+.topbar-actions{display:flex;gap:10px;align-items:center;}
+.content{padding:24px 28px;flex:1;}
+
+/* ── Page visibility ─────────────────────────── */
+.page{display:none;}.page.active{display:block;}
+
+/* ── Buttons ─────────────────────────────────── */
+.btn{display:inline-flex;align-items:center;gap:7px;padding:8px 16px;border-radius:8px;border:none;cursor:pointer;font-size:14px;font-weight:500;transition:.18s;font-family:inherit;}
+.btn:active{transform:scale(.97);}
+.btn-primary{background:var(--primary);color:#fff;}
+.btn-primary:hover{background:#1e40af;}
+.btn-ghost{background:transparent;color:var(--muted);border:1px solid var(--border);}
+.btn-ghost:hover{background:var(--bg);}
+.btn-danger{background:var(--danger-pale);color:var(--danger);}
+.btn-danger:hover{background:#fecaca;}
+.btn-success{background:var(--success);color:#fff;}
+.btn-success:hover{background:#15803d;}
+.btn-amber{background:#fef3c7;color:#92400e;}
+.btn-amber:hover{background:#fde68a;}
+.btn-sm{padding:5px 11px;font-size:12px;border-radius:6px;}
+.btn-icon{padding:7px;border-radius:7px;background:var(--bg);border:1px solid var(--border);cursor:pointer;font-size:15px;transition:.18s;display:inline-flex;align-items:center;justify-content:center;}
+.btn-icon:hover{background:#e2e8f0;}
+
+/* ── Stats ───────────────────────────────────── */
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:16px;margin-bottom:24px;}
+.stat-card{background:var(--card);border-radius:14px;border:1px solid var(--border);padding:20px;display:flex;align-items:center;gap:16px;}
+.stat-icon{width:50px;height:50px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:24px;flex-shrink:0;}
+.si-blue{background:#dbeafe;}.si-green{background:#dcfce7;}.si-amber{background:#fef3c7;}.si-purple{background:#ede9fe;}
+.stat-value{font-size:30px;font-weight:800;line-height:1;}
+.stat-label{font-size:12px;color:var(--muted);margin-top:3px;}
+
+/* ── Card ─────────────────────────────────────── */
+.card{background:var(--card);border-radius:14px;border:1px solid var(--border);overflow:hidden;margin-bottom:20px;}
+.card-header{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px;}
+.card-title{font-size:15px;font-weight:700;}
+.card-body{padding:20px;}
+
+/* ── Table ───────────────────────────────────── */
+.table-wrap{overflow-x:auto;}
+table{width:100%;border-collapse:collapse;font-size:14px;}
+thead th{background:#f8fafc;padding:11px 14px;text-align:right;font-weight:600;font-size:12px;color:var(--muted);border-bottom:2px solid var(--border);white-space:nowrap;}
+tbody td{padding:11px 14px;border-bottom:1px solid var(--border);vertical-align:middle;}
+tbody tr:last-child td{border-bottom:none;}
+tbody tr:hover{background:#f8fafc;}
+
+/* ── Form elements ───────────────────────────── */
+.form-group{margin-bottom:14px;}
+.form-label{display:block;font-size:13px;font-weight:500;margin-bottom:5px;color:var(--muted);}
+input,select,textarea{width:100%;padding:9px 12px;border:1.5px solid var(--border);border-radius:8px;font-size:14px;font-family:inherit;color:var(--text);background:#fff;transition:.18s;direction:rtl;}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--primary-light);box-shadow:0 0 0 3px rgba(59,130,246,.12);}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px;}
+
+/* ── Modal ───────────────────────────────────── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.48);z-index:200;align-items:center;justify-content:center;}
+.overlay.open{display:flex;}
+.modal{background:#fff;border-radius:18px;padding:28px;width:94%;max-width:640px;max-height:88vh;overflow-y:auto;box-shadow:0 24px 64px rgba(0,0,0,.22);}
+.modal-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:22px;}
+.modal-title{font-size:18px;font-weight:700;}
+.modal-close{background:none;border:none;font-size:22px;cursor:pointer;color:var(--muted);width:34px;height:34px;border-radius:8px;display:flex;align-items:center;justify-content:center;}
+.modal-close:hover{background:var(--bg);}
+.modal-footer{display:flex;gap:10px;justify-content:flex-start;margin-top:22px;padding-top:18px;border-top:1px solid var(--border);}
+
+/* ── Badge ───────────────────────────────────── */
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600;}
+.b-laptop{background:#dbeafe;color:#1e40af;}
+.b-pc{background:#dcfce7;color:#166534;}
+.b-dept{background:#f1f5f9;color:var(--muted);border:1px solid var(--border);}
+
+/* ── Search bar ──────────────────────────────── */
+.search-wrap{position:relative;max-width:300px;flex:1;}
+.search-wrap input{padding-right:36px;}
+.search-icon{position:absolute;right:11px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;}
+
+/* ── Toast ───────────────────────────────────── */
+.toast-box{position:fixed;bottom:24px;left:24px;z-index:999;display:flex;flex-direction:column;gap:8px;}
+.toast{background:#1e293b;color:#fff;padding:12px 20px;border-radius:10px;font-size:14px;box-shadow:0 4px 20px rgba(0,0,0,.25);animation:toastIn .3s ease;}
+.toast.success{background:#166534;}
+.toast.error{background:#991b1b;}
+@keyframes toastIn{from{transform:translateY(16px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+
+/* ── Empty state ─────────────────────────────── */
+.empty{text-align:center;padding:56px 20px;color:var(--muted);}
+.empty .e-icon{font-size:52px;margin-bottom:12px;}
+.empty p{font-size:14px;}
+
+/* ── Recipient block ─────────────────────────── */
+.recipient-block{background:var(--bg);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:12px;position:relative;}
+.r-num{font-size:12px;font-weight:700;color:var(--primary);margin-bottom:10px;}
+.r-remove{position:absolute;top:10px;left:12px;background:none;border:none;color:var(--danger);cursor:pointer;font-size:20px;line-height:1;padding:2px;}
+.r-remove:hover{color:#b91c1c;}
+
+/* ── Print area ──────────────────────────────── */
+.print-preview{background:#fff;border-radius:14px;border:1px solid var(--border);padding:28px 32px;margin-top:20px;}
+.pp-head{display:flex;flex-direction:column;align-items:center;padding-bottom:16px;border-bottom:3px solid var(--primary);margin-bottom:20px;position:relative;}
+.pp-logo-box{width:480px;height:300px;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:10px;}
+.pp-logo-box img{max-width:100%;max-height:100%;object-fit:contain;}
+.pp-logo-ph{font-size:11px;color:#94a3b8;text-align:center;border:1.5px dashed #cbd5e1;border-radius:8px;padding:12px 20px;}
+.pp-title{text-align:center;}
+.pp-title h2{font-size:17px;font-weight:800;color:var(--secondary);}
+.pp-date{position:absolute;left:0;bottom:18px;font-size:11px;color:var(--muted);line-height:1.7;}
+.pp table{font-size:12px;margin-bottom:18px;}
+.pp thead th{background:var(--primary);color:#fff;font-size:11px;padding:9px 10px;}
+.pp tbody td{padding:9px 10px;border-bottom:1px solid #e2e8f0;}
+.pp tbody tr:last-child td{border-bottom:none;}
+.sig-cell{min-width:70px;min-height:36px;}
+.sn-table thead th{background:#374151;}
+.section-label{font-size:12px;font-weight:700;color:var(--muted);margin-bottom:8px;text-transform:uppercase;letter-spacing:.06em;}
+.print-actions{display:flex;gap:10px;margin-top:16px;}
+
+/* ── Dept management ─────────────────────────── */
+.dept-chip{display:inline-flex;align-items:center;gap:6px;background:#f1f5f9;border:1px solid var(--border);padding:5px 12px;border-radius:20px;font-size:13px;margin:4px;}
+.dept-chip .dc-del{background:none;border:none;color:var(--danger);cursor:pointer;font-size:15px;line-height:1;padding:0;}
+
+/* ── Upload ──────────────────────────────────── */
+.upload-area{border:2px dashed var(--border);border-radius:10px;padding:24px;text-align:center;cursor:pointer;transition:.2s;background:var(--bg);}
+.upload-area:hover{border-color:var(--primary-light);background:#eff6ff;}
+.upload-area p{font-size:13px;color:var(--muted);margin-top:6px;}
+
+/* ── Print media ─────────────────────────────── */
+@media print{
+  .sidebar,.topbar,.content>.card,.print-actions,.stats-grid,.tabs-bar,#print-controls{display:none!important;}
+  .main{margin-right:0;}
+  .print-preview{border:none;padding:15px;margin:0;border-radius:0;}
+  .pp-head{border-bottom:2px solid #000;}
+  .pp table{page-break-inside:auto;}
+  .pp thead th{background:#000!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  .sn-table thead th{background:#333!important;color:#fff!important;-webkit-print-color-adjust:exact;print-color-adjust:exact;}
+  body{direction:rtl;}
+  .no-print{display:none!important;}
+}
+</style>
+</head>
+<body>
+
+<!-- ═══════════════════ SIDEBAR ═══════════════════ -->
+<aside class="sidebar">
+  <div class="sb-header">
+    <div class="sb-logo">🖥️ نظام إدارة الأجهزة</div>
+    <div class="sb-sub"></div>
+  </div>
+  <nav class="sb-nav">
+    <div class="nav-sec">الرئيسية</div>
+    <div class="nav-item active" onclick="goTo('dash')"><span class="ni">📊</span> لوحة التحكم</div>
+
+    <div class="nav-sec">الأجهزة</div>
+    <div class="nav-item" onclick="goTo('laptops')"><span class="ni">💻</span> اللابتوبات</div>
+    <div class="nav-item" onclick="goTo('pcs')"><span class="ni">🖥️</span> أجهزة الكمبيوتر</div>
+    <div id="cat-nav-items"></div>
+
+    <div class="nav-sec">الاستمارات</div>
+    <div class="nav-item" onclick="goTo('archive')"><span class="ni">🗂️</span> الاستمارات المحفوظة</div>
+
+    <div class="nav-sec">الإعدادات</div>
+    <div class="nav-item" onclick="goTo('settings')"><span class="ni">⚙️</span> الإعدادات</div>
+  </nav>
+</aside>
+
+<!-- ═══════════════════ MAIN ═══════════════════ -->
+<div class="main">
+  <div class="topbar">
+    <div class="page-title" id="topbar-title">لوحة التحكم</div>
+    <div class="topbar-actions" id="topbar-actions"></div>
+  </div>
+  <div class="content">
+
+    <!-- ── DASHBOARD ───────────────────────────── -->
+    <div class="page active" id="page-dash">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon si-blue">💻</div>
+          <div><div class="stat-value" id="stat-laptops">0</div><div class="stat-label">لابتوب</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon si-green">🖥️</div>
+          <div><div class="stat-value" id="stat-pcs">0</div><div class="stat-label">كمبيوتر مكتبي</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon si-amber">📋</div>
+          <div><div class="stat-value" id="stat-forms">0</div><div class="stat-label">استمارة</div></div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon si-purple">🏢</div>
+          <div><div class="stat-value" id="stat-depts">0</div><div class="stat-label">دائرة</div></div>
+        </div>
+      </div>
+      <div class="stats-grid" id="dash-custom-stats" style="margin-top:12px;"></div>
+
+      <div class="card">
+        <div class="card-header"><span class="card-title">آخر الأجهزة المضافة</span></div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>الرقم</th><th>الاسم</th><th>الدائرة</th><th>MAC</th><th>النوع</th><th>الفئة</th></tr></thead>
+            <tbody id="dash-recent"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── LAPTOPS ─────────────────────────────── -->
+    <div class="page" id="page-laptops">
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="laptop-search" autocomplete="off" oninput="renderTable('laptop')">
+            </div>
+            <button class="btn btn-primary" onclick="openAddModal('laptop')">👤 إضافة فرد</button>
+            <button class="btn btn-ghost" onclick="openBatchModal('laptop')">👥 إضافة مجموعة</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>اسم المستخدم</th><th>الدائرة</th><th>S/N</th><th>MAC Address</th><th>Device/Type</th><th>إجراءات</th></tr></thead>
+            <tbody id="laptop-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PCS ────────────────────────────────── -->
+    <div class="page" id="page-pcs">
+      <div class="card">
+        <div class="card-header">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="pc-search" autocomplete="off" oninput="renderTable('pc')">
+            </div>
+            <button class="btn btn-primary" onclick="openAddModal('pc')">👤 إضافة فرد</button>
+            <button class="btn btn-ghost" onclick="openBatchModal('pc')">👥 إضافة مجموعة</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>#</th><th>اسم المستخدم</th><th>الدائرة</th><th>S/N</th><th>MAC Address</th><th>Device/Type</th><th>إجراءات</th></tr></thead>
+            <tbody id="pc-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── CUSTOM CATEGORY ──────────────────────── -->
+    <div class="page" id="page-cat">
+      <div class="card">
+        <div class="card-header" id="cat-page-header">
+          <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
+            <div class="search-wrap"><span class="search-icon">🔍</span><input type="text" id="cat-search" oninput="renderCatTable()" autocomplete="off"></div>
+            <button class="btn btn-primary" id="cat-add-btn" onclick="openCatAddModal()">👤 إضافة فرد</button>
+            <button class="btn btn-ghost" id="cat-batch-btn" onclick="openCatBatchModal()">👥 إضافة مجموعة</button>
+          </div>
+        </div>
+        <div class="table-wrap"><table><thead id="cat-thead"></thead><tbody id="cat-tbody"></tbody></table></div>
+      </div>
+    </div>
+
+    <!-- ── FORM BUILDER ───────────────────────── -->
+    <div class="page" id="page-forms">
+      <div id="print-controls">
+        <div class="card" oninput="markFormDirty()" onchange="markFormDirty()">
+          <div class="card-header"></div>
+          <div class="card-body">
+
+            <!-- Meta row -->
+            <div class="form-row" style="margin-bottom:4px;">
+              <div class="form-group">
+                <label class="form-label">فئة الجهاز</label>
+                <select id="form-type">
+                  <option value="Laptop">💻 لابتوب</option>
+                  <option value="PC">🖥️ كمبيوتر مكتبي</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label class="form-label">التاريخ</label>
+                <input type="date" id="form-date">
+              </div>
+            </div>
+
+            <!-- Device info -->
+            <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:8px;margin-bottom:4px;">
+              <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:12px;">📦 معلومات الجهاز</div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">اسم الجهاز *</label>
+                  <input type="text" id="fi-devname" autocomplete="off">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">مواصفات الجهاز</label>
+                  <input type="text" id="fi-specs" autocomplete="off">
+                </div>
+              </div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">نوع الجهاز</label>
+                  <input type="text" id="fi-devtype" autocomplete="off">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">نوع الشبكة</label>
+                  <select id="fi-nettype">
+                    <option value="">— اختر —</option>
+                    <option value="GSC.Local">GSC.Local</option>
+                    <option value="Network">Network</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-group">
+                <label class="form-label">الأنظمة والبرامج</label>
+                <input type="text" id="fi-sw" autocomplete="off" value="Antivirus / Adobe / Ms Office / Hasoob">
+              </div>
+            </div>
+
+            <!-- Recipient (single person) -->
+            <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px;">
+              <div style="font-size:13px;font-weight:700;color:var(--primary);margin-bottom:12px;">📝 بيانات المستلم</div>
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="form-label">اسم المستلم *</label>
+                  <input type="text" id="rec-name" autocomplete="off">
+                </div>
+                <div class="form-group">
+                  <label class="form-label">الرقم الوظيفي</label>
+                  <input type="text" id="rec-empid" autocomplete="off">
+                </div>
+              </div>
+            </div>
+
+            <!-- Users list -->
+            <div style="border-top:1px solid var(--border);padding-top:16px;margin-top:4px;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+                <span style="font-size:13px;font-weight:700;color:var(--primary);">👥 قائمة المستخدمين</span>
+                <button class="btn btn-ghost btn-sm" onclick="addUserRow()">➕ إضافة مستخدم</button>
+              </div>
+              <div style="display:grid;grid-template-columns:50px 1fr 1fr 36px;gap:8px;padding:0 4px;margin-bottom:6px;">
+                <span style="font-size:11px;color:var(--muted);font-weight:600;">#</span>
+                <span style="font-size:11px;color:var(--muted);font-weight:600;">الاسم</span>
+                <span style="font-size:11px;color:var(--muted);font-weight:600;">S/N</span>
+                <span></span>
+              </div>
+              <div id="user-rows"></div>
+            </div>
+
+            <div style="display:flex;gap:10px;margin-top:20px;flex-wrap:wrap;">
+              <button class="btn btn-ghost" onclick="goTo('archive')">↩️ إلغاء</button>
+              <button class="btn btn-ghost" onclick="clearForm()">🗑️ مسح</button>
+              <button class="btn btn-ghost" onclick="buildPreview(false)">👁️ معاينة</button>
+              <button class="btn btn-ghost" onclick="buildPreview(true)">💾 حفظ</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Preview renders here -->
+      <div id="form-preview-area" style="display:none;">
+        <div class="print-preview" id="printable-form"></div>
+        <div class="print-actions no-print" style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn btn-ghost" onclick="hidePreview()">✏️ تعديل</button>
+          <button class="btn btn-ghost" onclick="buildPreview(true)">💾 حفظ</button>
+          <button class="btn btn-ghost" onclick="window.print()">🖨️ طباعة</button>
+          <button class="btn btn-ghost" onclick="goTo('archive')">🗂️ الاستمارات المحفوظة</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── ARCHIVE ─────────────────────────────── -->
+    <div class="page" id="page-archive">
+      <div class="card">
+        <div class="card-header">
+          <button class="btn btn-primary" onclick="goTo('forms')">📋 إنشاء استمارة جديدة</button>
+          <div style="display:flex;gap:10px;align-items:center;">
+            <div class="search-wrap">
+              <span class="search-icon">🔍</span>
+              <input type="text" id="archive-search" oninput="renderArchive()" autocomplete="off">
+            </div>
+            <span id="archive-count" class="badge b-dept">0</span>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>التاريخ</th>
+                <th>اسم الجهاز</th>
+                <th>الفئة</th>
+                <th>المستلم</th>
+                <th>المستخدمون</th>
+                <th style="text-align:center;">إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="archive-tbody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS: DEPTS ────────────────────── -->
+    <div class="page" id="page-settings">
+      <div class="card" style="max-width:860px;">
+        <div class="card-header" style="flex-wrap:wrap;gap:10px;">
+          <span class="card-title">🏢 إدارة الدوائر</span>
+          <span id="dept-count-badge" class="badge b-dept">0</span>
+          <input type="text" id="dept-search" placeholder="بحث..." autocomplete="off" style="flex:1;min-width:140px;max-width:220px;margin-right:auto;" oninput="renderDepts()">
+          <button class="btn btn-primary" onclick="openAddDeptModal()">➕ إضافة</button>
+        </div>
+        <div class="card-body">
+          <div id="dept-list"></div>
+        </div>
+      </div>
+      <div class="card" style="margin-top:20px;max-width:860px;">
+        <div class="card-header">
+          <span class="card-title">📋 إدارة الأجهزة</span>
+          <button class="btn btn-primary" onclick="toggleAddCatForm()" style="margin-right:auto;">➕ إضافة نوع جهاز</button>
+        </div>
+        <div class="card-body">
+          <!-- Category list -->
+          <div id="cat-list"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS: LOGO ─────────────────────── -->
+    <div class="page" id="page-logo">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:860px;">
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">✏️ اسم المؤسسة</span></div>
+          <div class="card-body">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">يظهر في رأس الاستمارة المطبوعة.</p>
+            <div class="form-group">
+              <label class="form-label">اسم المؤسسة (السطر الأول)</label>
+              <input type="text" id="org-name-1" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label class="form-label">اسم المؤسسة (السطر الثاني — اختياري)</label>
+              <input type="text" id="org-name-2" autocomplete="off">
+            </div>
+            <div class="form-group">
+              <label class="form-label">القسم / الدائرة المُصدِرة (اختياري)</label>
+              <input type="text" id="org-dept" autocomplete="off">
+            </div>
+            <button class="btn btn-primary" onclick="saveOrgName()">💾 حفظ</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><span class="card-title">🖼️ شعار الشركة (صورة)</span></div>
+          <div class="card-body">
+            <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">يُستخدم في رأس الاستمارات المطبوعة.</p>
+            <div class="upload-area" onclick="document.getElementById('logo-input').click()">
+              <div id="logo-preview-box">
+                <div style="font-size:36px;">🖼️</div>
+                <p>انقر لرفع الشعار (PNG / JPG / SVG)</p>
+              </div>
+            </div>
+            <input type="file" id="logo-input" accept="image/*" style="display:none;" onchange="handleLogoUpload(event)">
+            <div style="margin-top:12px;">
+              <button class="btn btn-ghost btn-sm" onclick="removeLogo()">🗑️ حذف الشعار</button>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<!-- ═══ ADD / EDIT DEVICE MODAL ═══ -->
+<div class="overlay" id="device-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="modal-title">إضافة جهاز</span>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">اسم المستخدم *</label>
+        <input type="text" id="f-name" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label class="form-label">الدائرة *</label>
+        <select id="f-dept"></select>
+      </div>
+    </div>
+    <div class="form-row">
+      <div class="form-group">
+        <label class="form-label">S/N</label>
+        <input type="text" id="f-sn" autocomplete="off">
+      </div>
+      <div class="form-group">
+        <label class="form-label">MAC Address</label>
+        <input type="text" id="f-mac" autocomplete="off">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Device / Type</label>
+      <input type="text" id="f-devtype" autocomplete="off">
+    </div>
+    <div id="f-custom-fields"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveDevice()">💾 حفظ</button>
+      <button class="btn btn-ghost" onclick="closeModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CAT ADD/EDIT MODAL ═══ -->
+<div class="overlay" id="cat-modal">
+  <div class="modal">
+    <div class="modal-header">
+      <span class="modal-title" id="cat-modal-title">إضافة جهاز</span>
+      <button class="modal-close" onclick="closeCatModal()">✕</button>
+    </div>
+    <div id="cat-modal-fields"></div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveCatDevice()">💾 حفظ</button>
+      <button class="btn btn-ghost" onclick="closeCatModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CAT BATCH MODAL ═══ -->
+<div class="overlay" id="cat-batch-modal">
+  <div class="modal" style="max-width:900px;">
+    <div class="modal-header">
+      <span class="modal-title" id="cat-batch-title">إضافة مجموعة</span>
+      <button class="modal-close" onclick="closeCatBatchModal()">✕</button>
+    </div>
+    <div style="background:var(--bg);border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">Device / Type (مشترك للكل)</label>
+        <input type="text" id="cat-b-devtype" autocomplete="off">
+      </div>
+    </div>
+    <div id="cat-batch-col-headers" style="padding:0 4px 6px;border-bottom:1px solid var(--border);margin-bottom:8px;"></div>
+    <div id="cat-batch-rows" style="max-height:340px;overflow-y:auto;"></div>
+    <button class="btn btn-ghost btn-sm" onclick="addCatBatchRow()" style="margin-top:10px;">➕ إضافة مستخدم</button>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveCatBatch()">💾 حفظ الكل</button>
+      <button class="btn btn-ghost" onclick="closeCatBatchModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ BATCH ADD MODAL ═══ -->
+<div class="overlay" id="batch-modal">
+  <div class="modal" style="max-width:900px;">
+    <div class="modal-header">
+      <span class="modal-title" id="batch-modal-title">إضافة مجموعة</span>
+      <button class="modal-close" onclick="closeBatchModal()">✕</button>
+    </div>
+
+    <!-- Shared device type -->
+    <div style="background:var(--bg);border-radius:10px;padding:14px 16px;margin-bottom:16px;">
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">Device / Type (مشترك للكل)</label>
+        <input type="text" id="b-devtype" autocomplete="off">
+      </div>
+    </div>
+
+    <!-- Column headers -->
+    <div style="display:grid;grid-template-columns:40px 1fr 1fr 140px 130px 36px;gap:8px;padding:0 4px 6px;border-bottom:1px solid var(--border);margin-bottom:8px;">
+      <span style="font-size:11px;color:var(--muted);font-weight:600;">#</span>
+      <span style="font-size:11px;color:var(--muted);font-weight:600;">اسم المستخدم *</span>
+      <span style="font-size:11px;color:var(--muted);font-weight:600;">الدائرة *</span>
+      <span style="font-size:11px;color:var(--muted);font-weight:600;">S/N</span>
+      <span style="font-size:11px;color:var(--muted);font-weight:600;">MAC</span>
+      <span></span>
+    </div>
+    <div id="batch-rows" style="max-height:340px;overflow-y:auto;"></div>
+    <button class="btn btn-ghost btn-sm" onclick="addBatchRow()" style="margin-top:10px;">➕ إضافة مستخدم</button>
+
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="saveBatch()">💾 حفظ الكل</button>
+      <button class="btn btn-ghost" onclick="closeBatchModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ CONFIRM DIALOG ═══ -->
+<div class="overlay" id="confirm-overlay">
+  <div class="modal" style="max-width:380px;text-align:center;">
+    <div style="font-size:38px;margin-bottom:12px;" id="confirm-icon">⚠️</div>
+    <div style="font-size:16px;font-weight:700;margin-bottom:8px;" id="confirm-msg"></div>
+    <div style="display:flex;gap:10px;justify-content:center;margin-top:20px;">
+      <button class="btn btn-danger" id="confirm-ok">تأكيد</button>
+      <button class="btn btn-ghost" onclick="closeConfirm()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ EMOJI POPUP ═══ -->
+<div id="emoji-picker" style="display:none;position:fixed;z-index:1000;background:#fff;border:1px solid var(--border);border-radius:12px;padding:10px;box-shadow:0 8px 32px rgba(0,0,0,.18);width:220px;">
+  <div style="display:flex;flex-wrap:wrap;gap:2px;">
+    <span onclick="pickEmoji('🖨️')" style="font-size:24px;cursor:pointer;padding:5px;border-radius:6px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">🖨️</span>
+    <span onclick="pickEmoji('🖥️')" style="font-size:24px;cursor:pointer;padding:5px;border-radius:6px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">🖥️</span>
+    <span onclick="pickEmoji('💻')" style="font-size:24px;cursor:pointer;padding:5px;border-radius:6px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">💻</span>
+    <span onclick="pickEmoji('📠')" style="font-size:24px;cursor:pointer;padding:5px;border-radius:6px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">📠</span>
+    <span onclick="pickEmoji('🖱️')" style="font-size:24px;cursor:pointer;padding:5px;border-radius:6px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">🖱️</span>
+    <span onclick="pickEmoji('📷')" style="font-size:24px;cursor:pointer;padding:5px;border-radius:6px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">📷</span>
+    <span onclick="pickEmoji('📡')" style="font-size:24px;cursor:pointer;padding:5px;border-radius:6px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">📡</span>
+    <span onclick="pickEmoji('🔌')" style="font-size:24px;cursor:pointer;padding:5px;border-radius:6px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">🔌</span>
+    <span onclick="pickEmoji('💾')" style="font-size:24px;cursor:pointer;padding:5px;border-radius:6px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">💾</span>
+    <span onclick="pickEmoji('📺')" style="font-size:24px;cursor:pointer;padding:5px;border-radius:6px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">📺</span>
+    <span onclick="pickEmoji('☎️')" style="font-size:24px;cursor:pointer;padding:5px;border-radius:6px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">☎️</span>
+    <span onclick="pickEmoji('📟')" style="font-size:24px;cursor:pointer;padding:5px;border-radius:6px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">📟</span>
+    <span onclick="pickEmoji('🔋')" style="font-size:24px;cursor:pointer;padding:5px;border-radius:6px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">🔋</span>
+    <span onclick="pickEmoji('🗄️')" style="font-size:24px;cursor:pointer;padding:5px;border-radius:6px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">🗄️</span>
+    <span onclick="pickEmoji('📦')" style="font-size:24px;cursor:pointer;padding:5px;border-radius:6px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">📦</span>
+    <span onclick="pickEmoji('🔧')" style="font-size:24px;cursor:pointer;padding:5px;border-radius:6px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">🔧</span>
+    <span onclick="pickEmoji('📲')" style="font-size:24px;cursor:pointer;padding:5px;border-radius:6px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">📲</span>
+    <span onclick="pickEmoji('🖨️')" style="font-size:24px;cursor:pointer;padding:5px;border-radius:6px;" onmouseover="this.style.background='var(--surface)'" onmouseout="this.style.background=''">🗃️</span>
+  </div>
+</div>
+
+<!-- ═══ ADD DEPARTMENT MODAL ═══ -->
+<div class="overlay" id="add-dept-modal">
+  <div class="modal" style="max-width:380px;">
+    <div class="modal-header">
+      <span class="modal-title">🏢 إضافة دائرة</span>
+      <button class="modal-close" onclick="closeAddDeptModal()">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">اسم الدائرة *</label>
+      <input type="text" id="new-dept-input" autocomplete="off" placeholder="مثال: قسم الهندسة" onkeydown="if(event.key==='Enter')addDept()">
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-primary" onclick="addDept()">💾 حفظ</button>
+      <button class="btn btn-ghost" onclick="closeAddDeptModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ ADD CATEGORY MODAL ═══ -->
+<div class="overlay" id="add-cat-modal">
+  <div class="modal" style="max-width:480px;">
+    <div class="modal-header">
+      <span class="modal-title">➕ إضافة نوع جهاز</span>
+      <button class="modal-close" onclick="closeCatAddCatModal()">✕</button>
+    </div>
+    <div style="display:flex;gap:12px;align-items:flex-end;margin-bottom:18px;">
+      <div class="form-group" style="margin:0;flex:1;">
+        <label class="form-label">اسم النوع *</label>
+        <input type="text" id="new-cat-name" autocomplete="off" placeholder="مثال: طابعات">
+      </div>
+      <div class="form-group" style="margin:0;">
+        <label class="form-label">الأيقونة</label>
+        <button type="button" id="new-cat-icon-btn" onclick="toggleEmojiPicker()" style="width:54px;height:42px;font-size:22px;border:1px solid var(--border);border-radius:8px;background:var(--bg);cursor:pointer;">📂</button>
+        <input type="hidden" id="new-cat-icon" value="📂">
+      </div>
+    </div>
+    <div id="cat-fields-section">
+    <div style="font-size:12px;color:var(--muted);font-weight:600;margin-bottom:8px;">الحقول</div>
+    <div id="new-cat-fields" style="display:flex;flex-wrap:wrap;gap:6px 20px;margin-bottom:10px;padding:10px;background:var(--bg);border-radius:8px;border:1px solid var(--border);"></div>
+    <div style="margin-bottom:18px;position:relative;">
+      <button class="btn btn-ghost btn-sm" id="add-field-trigger" onclick="toggleFieldPopup(this)">➕ إضافة حقل مخصص</button>
+      <div id="field-popup" style="display:none;position:absolute;top:calc(100% + 6px);right:0;background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px;box-shadow:0 8px 24px rgba(0,0,0,.15);z-index:500;min-width:220px;">
+        <input type="text" id="new-custom-field-input" autocomplete="off" placeholder="اسم الحقل..." style="margin-bottom:8px;">
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-primary btn-sm" onclick="addCustomFieldToForm()">إضافة</button>
+          <button class="btn btn-ghost btn-sm" onclick="document.getElementById('field-popup').style.display='none'">إلغاء</button>
+        </div>
+      </div>
+    </div>
+    </div><!-- /cat-fields-section -->
+    <div class="modal-footer">
+      <button class="btn btn-primary" id="cat-save-btn">حفظ</button>
+      <button class="btn btn-ghost" onclick="closeCatAddCatModal()">إلغاء</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TOAST ═══ -->
+<div class="toast-box" id="toasts"></div>
+
+<!-- ═══════════════════ SCRIPT ═══════════════════ -->
+<script>
+// ── Custom confirm ────────────────────────────────
+function showConfirm(msg, onOk) {
+  document.getElementById('confirm-msg').textContent = msg;
+  document.getElementById('confirm-ok').onclick = () => { closeConfirm(); onOk(); };
+  document.getElementById('confirm-overlay').classList.add('open');
+}
+function closeConfirm() { document.getElementById('confirm-overlay').classList.remove('open'); }
+
+// ── Storage helpers ──────────────────────────────
+// ── Storage: SQLite via server, localStorage as fallback ──
+const USE_SERVER = true; // set false to revert to localStorage only
+const _cache = {}; // in-memory cache so sync S.get() works after initial load
+
+async function loadAllData() {
+  if (!USE_SERVER) return;
+  try {
+    const res = await fetch('/api/kv');
+    const all = await res.json();
+    Object.assign(_cache, all);
+  } catch(e) {
+    console.warn('Server not available, using localStorage');
+  }
+}
+
+const S = {
+  get: k => {
+    if (USE_SERVER) return (_cache[k] !== undefined ? _cache[k] : null);
+    return JSON.parse(localStorage.getItem(k) || 'null');
+  },
+  set: (k, v) => {
+    _cache[k] = v;
+    if (USE_SERVER) {
+      fetch('/api/kv/'+encodeURIComponent(k), {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({value: v})
+      }).catch(()=>{});
+    } else {
+      localStorage.setItem(k, JSON.stringify(v));
+    }
+  },
+  remove: k => {
+    delete _cache[k];
+    if (USE_SERVER) {
+      fetch('/api/kv/'+encodeURIComponent(k), {method:'DELETE'}).catch(()=>{});
+    } else {
+      localStorage.removeItem(k); // fallback only
+    }
+  }
+};
+
+// ── Custom Categories ─────────────────────────────
+const ALL_FIELDS = [
+  { key:'name',    label:'اسم المستخدم', required:true },
+  { key:'dept',    label:'الدائرة',       required:true, isDept:true },
+  { key:'sn',      label:'S/N',           mono:true },
+  { key:'mac',     label:'MAC Address',   mono:true },
+  { key:'devtype', label:'Device/Type',   isDevtype:true },
+];
+const DEFAULT_FIELDS = ['name','dept','sn','mac','devtype'];
+
+let currentCatId = null;
+let catEditId = null;
+let catBatchRowCount = 0;
+
+function getCats() { return S.get('customCats') || []; }
+function getCatData(catId) { return S.get('catdata_'+catId) || []; }
+
+function renderCatSidebar() {
+  const cats = getCats();
+  const box = document.getElementById('cat-nav-items');
+  box.innerHTML = cats.map(c=>`
+    <div class="nav-item" onclick="goToCat('${c.id}')"><span class="ni">${c.icon||'📂'}</span> ${esc(c.name)}</div>
+  `).join('');
+}
+
+function goToCat(catId) {
+  currentCatId = catId;
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.getElementById('page-cat').classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.querySelectorAll('#cat-nav-items .nav-item').forEach(n => {
+    if(n.getAttribute('onclick').includes("'"+catId+"'")) n.classList.add('active');
+  });
+  const cat = getCats().find(c=>c.id===catId);
+  document.getElementById('topbar-title').textContent = cat?.name || '';
+  renderCatTable();
+}
+
+function catFields() {
+  const allCats = [...BUILTIN_CATS, ...getCats()];
+  const cat = allCats.find(c=>c.id===currentCatId);
+  const keys = cat?.fields || DEFAULT_FIELDS;
+  const overrides = cat?.fieldLabels || {};
+  const std = ALL_FIELDS.filter(f => keys.includes(f.key)).map(f=>({...f, label: overrides[f.key] || f.label}));
+  const custom = (cat?.customFields||[]).map(cf=>({key:cf.key, label:cf.label, isCustom:true}));
+  return [...std, ...custom];
+}
+
+function renderCatTable() {
+  const fields = catFields();
+  const q = (document.getElementById('cat-search')?.value||'').toLowerCase();
+  let data = getCatData(currentCatId);
+  if(q) data = data.filter(d => fields.some(f=>(d[f.key]||'').toLowerCase().includes(q)));
+
+  // thead
+  const thead = document.getElementById('cat-thead');
+  thead.innerHTML = '<tr><th>#</th>' + fields.map(f=>`<th>${f.label}</th>`).join('') + '<th>إجراءات</th></tr>';
+
+  const tbody = document.getElementById('cat-tbody');
+  if(!data.length){
+    tbody.innerHTML=`<tr><td colspan="${fields.length+2}"><div class="empty"><div class="e-icon">📂</div><p>لا توجد أجهزة بعد</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map((d,i)=>{
+    const prevG = i>0?data[i-1].groupId:null, nextG=i<data.length-1?data[i+1].groupId:null;
+    const bt = (d.groupId&&d.groupId!==prevG)?'border-top:3px solid #94a3b8;':'';
+    const bb = (d.groupId&&d.groupId!==nextG)?'border-bottom:3px solid #94a3b8;':'';
+    const cells = fields.map(f=>{
+      const v = esc(d[f.key]||'');
+      if(f.isDept) return `<td><span class="badge b-dept">${v||'—'}</span></td>`;
+      if(f.mono)   return `<td style="font-family:monospace;font-size:12px;">${v||'—'}</td>`;
+      return `<td>${v||'—'}</td>`;
+    }).join('');
+    return `<tr style="${d.groupId?'background:#f0f7ff;':''}${bt}${bb}">
+      <td style="color:var(--muted);font-size:12px;${bt}${bb}">${i+1}</td>
+      ${cells}
+      <td><span style="display:flex;gap:6px;">
+        <button class="btn-icon" onclick="openCatEditModal(${d.id})">✏️</button>
+        <button class="btn-icon" onclick="deleteCatDevice(${d.id})">🗑️</button>
+      </span></td>
+    </tr>`;
+  }).join('');
+}
+
+function openCatAddModal() {
+  catEditId = null;
+  const cat = getCats().find(c=>c.id===currentCatId);
+  document.getElementById('cat-modal-title').textContent = 'إضافة جهاز — '+(cat?.name||'');
+  buildCatModalFields({});
+  document.getElementById('cat-modal').classList.add('open');
+}
+
+function openCatEditModal(id) {
+  catEditId = id;
+  const d = getCatData(currentCatId).find(x=>x.id===id); if(!d) return;
+  document.getElementById('cat-modal-title').textContent = 'تعديل جهاز';
+  buildCatModalFields(d);
+  document.getElementById('cat-modal').classList.add('open');
+}
+
+function buildCatModalFields(d) {
+  const fields = catFields();
+  const depts = S.get('depts')||[];
+  document.getElementById('cat-modal-fields').innerHTML = fields.map(f=>{
+    if(f.isDept){
+      const opts = depts.map(dep=>`<option value="${esc(dep)}" ${dep===(d.dept||'')?'selected':''}>${esc(dep)}</option>`).join('');
+      return `<div class="form-group"><label class="form-label">${f.label} *</label><select id="cmf-${f.key}">${opts}</select></div>`;
+    }
+    if(f.isDevtype){
+      return `<div class="form-group"><label class="form-label">${f.label}</label><input type="text" id="cmf-${f.key}" autocomplete="off" value="${esc(d[f.key]||'')}"></div>`;
+    }
+    return `<div class="form-group"><label class="form-label">${f.label}${f.required?' *':''}</label><input type="text" id="cmf-${f.key}" autocomplete="off" value="${esc(d[f.key]||'')}"></div>`;
+  }).join('');
+}
+
+function closeCatModal() { document.getElementById('cat-modal').classList.remove('open'); }
+
+function saveCatDevice() {
+  const fields = catFields();
+  const entry = { id: catEditId||Date.now() };
+  for(const f of fields){
+    const el = document.getElementById('cmf-'+f.key);
+    if(!el) continue;
+    entry[f.key] = el.value.trim();
+    if(f.required && !entry[f.key]){ toast('يرجى ملء '+f.label,'error'); return; }
+  }
+  let data = getCatData(currentCatId);
+  if(catEditId){ data = data.map(d=>d.id===catEditId?entry:d); toast('تم التحديث ✅','success'); }
+  else { data.push(entry); toast('تمت الإضافة ✅','success'); }
+  S.set('catdata_'+currentCatId, data);
+  closeCatModal();
+  renderCatTable();
+}
+
+function deleteCatDevice(id) {
+  showConfirm('حذف هذا الجهاز؟', ()=>{
+    S.set('catdata_'+currentCatId, getCatData(currentCatId).filter(d=>d.id!==id));
+    renderCatTable();
+    toast('تم الحذف');
+  });
+}
+
+// Cat batch modal
+function openCatBatchModal() {
+  catBatchRowCount = 0;
+  const cat = getCats().find(c=>c.id===currentCatId);
+  document.getElementById('cat-batch-title').textContent = 'إضافة مجموعة — '+(cat?.name||'');
+  document.getElementById('cat-b-devtype').value='';
+  // build col headers (skip name which is in rows, and devtype which is shared)
+  const rowFields = catFields().filter(f=>!f.isDevtype);
+  const grid = '40px '+rowFields.map(f=>f.isDept?'140px':'1fr').join(' ')+' 36px';
+  document.getElementById('cat-batch-col-headers').style.cssText=`display:grid;grid-template-columns:${grid};gap:8px;`;
+  document.getElementById('cat-batch-col-headers').innerHTML =
+    `<span style="font-size:11px;color:var(--muted);font-weight:600;">#</span>`+
+    rowFields.map(f=>`<span style="font-size:11px;color:var(--muted);font-weight:600;">${f.label}${f.required?' *':''}</span>`).join('')+
+    `<span></span>`;
+  document.getElementById('cat-batch-rows').innerHTML='';
+  addCatBatchRow(); addCatBatchRow(); addCatBatchRow();
+  document.getElementById('cat-batch-modal').classList.add('open');
+}
+
+function addCatBatchRow() {
+  catBatchRowCount++;
+  const n = catBatchRowCount;
+  const rowFields = catFields().filter(f=>!f.isDevtype);
+  const grid = '40px '+rowFields.map(f=>f.isDept?'140px':'1fr').join(' ')+' 36px';
+  const depts = S.get('depts')||[];
+  const row = document.createElement('div');
+  row.style.cssText = `display:grid;grid-template-columns:${grid};gap:8px;margin-bottom:8px;align-items:center;`;
+  row.innerHTML = `<span style="text-align:center;font-size:13px;font-weight:700;color:var(--muted);">${n}</span>`+
+    rowFields.map(f=>{
+      if(f.isDept) return `<select class="cbr-${f.key}">${depts.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`).join('')}</select>`;
+      return `<input type="text" class="cbr-${f.key}" autocomplete="off" ${f.mono?'style="font-family:monospace;font-size:12px;"':''}>`;
+    }).join('')+
+    `<button class="btn-icon" onclick="this.parentElement.remove()">🗑️</button>`;
+  document.getElementById('cat-batch-rows').appendChild(row);
+}
+
+function closeCatBatchModal() { document.getElementById('cat-batch-modal').classList.remove('open'); }
+
+function saveCatBatch() {
+  const devtype = document.getElementById('cat-b-devtype').value;
+  const rowFields = catFields().filter(f=>!f.isDevtype);
+  const rows = document.querySelectorAll('#cat-batch-rows > div');
+  let data = getCatData(currentCatId);
+  let added = 0;
+  const groupId = Date.now();
+  rows.forEach(row=>{
+    const entry = { id: Date.now()+Math.random(), groupId, devtype };
+    let hasValue = false;
+    rowFields.forEach(f=>{
+      const el = row.querySelector('.cbr-'+f.key);
+      entry[f.key] = el?.value?.trim()||'';
+      if(entry[f.key]) hasValue = true;
+    });
+    if(!hasValue) return;
+    if(rowFields.find(f=>f.required) && !entry[rowFields.find(f=>f.required).key]){ toast('كل صف يحتاج '+rowFields.find(f=>f.required).label,'error'); return; }
+    data.push(entry);
+    added++;
+  });
+  S.set('catdata_'+currentCatId, data);
+  closeCatBatchModal();
+  renderCatTable();
+  toast(`تمت إضافة ${added} جهاز ✅`,'success');
+}
+
+// Category management in settings
+const BUILTIN_CATS = [
+  { id:'laptop', name:'لابتوب', icon:'💻', fields:[...DEFAULT_FIELDS], builtin:true },
+  { id:'pc',     name:'كمبيوتر مكتبي', icon:'🖥️', fields:[...DEFAULT_FIELDS], builtin:true },
+];
+
+function renderCategories() {
+  const box = document.getElementById('cat-list');
+  if(!box) return;
+  const allCats = [...BUILTIN_CATS, ...getCats()];
+  box.innerHTML = allCats.map(c=>{
+    const activeFields = c.fields || DEFAULT_FIELDS;
+    const stdTags = ALL_FIELDS.filter(f=>activeFields.includes(f.key)).map(f=>`
+      <span style="font-size:12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:2px 8px;">${f.label}</span>`).join('');
+    const customTags = (c.customFields||[]).map(cf=>`
+      <span style="font-size:12px;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:2px 8px;opacity:.7;">${esc(cf.label)}</span>`).join('');
+    return `<div style="border:1px solid var(--border);border-radius:10px;padding:14px;margin-bottom:12px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <span style="font-size:15px;font-weight:600;">${c.icon} ${esc(c.name)}</span>
+        <span style="display:flex;gap:6px;align-items:center;">
+          <button class="btn-icon" onclick="openEditCatModal('${c.id}')" title="تعديل">✏️</button>
+          ${!c.builtin ? `<button class="btn-icon" onclick="deleteCategory('${c.id}')" title="حذف">🗑️</button>` : ''}
+        </span>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:4px;">${stdTags}${customTags}</div>
+    </div>`;
+  }).join('');
+}
+
+function inlineEditCatField(catId, idx, btn) {
+  const cats = getCats();
+  const cat = cats.find(c=>c.id===catId);
+  if(!cat) return;
+  const cf = cat.customFields[idx];
+  const span = btn.previousElementSibling;
+  const oldLabel = cf.label;
+  span.innerHTML = `<input type="text" value="${esc(oldLabel)}" autocomplete="off" style="width:100%;font-size:13px;padding:2px 6px;border:1px solid var(--primary);border-radius:5px;"
+    onblur="saveCatFieldLabel('${catId}',${idx},this.value)"
+    onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value='${esc(oldLabel)}';this.blur();}">`;
+  span.querySelector('input').focus();
+}
+
+function saveCatFieldLabel(catId, idx, newLabel) {
+  newLabel = newLabel.trim();
+  if(!newLabel) { renderCategories(); return; }
+  const cats = getCats();
+  const cat = cats.find(c=>c.id===catId);
+  if(!cat||!cat.customFields[idx]) return;
+  cat.customFields[idx].label = newLabel;
+  S.set('customCats', cats);
+  renderCategories();
+}
+
+function removeCustomCatField(catId, idx) {
+  const cats = getCats();
+  const cat = cats.find(c=>c.id===catId);
+  if(!cat) return;
+  cat.customFields.splice(idx,1);
+  S.set('customCats', cats);
+  renderCategories();
+  toast('تم الحذف');
+}
+
+let editingCatId = null;
+
+function fieldRow({fkey, label, checked, disabled, isCustom}) {
+  const div = document.createElement('div');
+  div.style.cssText = 'display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:#fff;direction:rtl;';
+  if(isCustom) { div.dataset.customKey = fkey; div.dataset.customLabel = label; }
+  else { div.dataset.stdKey = fkey; }
+  div.dataset.currentLabel = label;
+  div.innerHTML = `
+    <span class="field-label-span" style="font-size:13px;text-align:right;">${esc(label)}</span>
+    <button type="button" class="btn-icon" style="font-size:12px;" onclick="inlineEditModalField(this)" title="تعديل الاسم">✏️</button>
+    ${isCustom ? `<button type="button" class="btn-icon" style="font-size:12px;color:var(--danger);" onclick="removeModalCustomField(this)" title="حذف">✕</button>` : '<span></span>'}
+    <input type="checkbox" data-fkey="${fkey}" ${isCustom?'data-custom="1"':''} ${checked?'checked':''} ${disabled?'disabled':''} style="width:16px;height:16px;flex-shrink:0;">`;
+  return div;
+}
+
+function renderCatFieldsInContainer(container, activeFields, labelOverrides, customFields) {
+  container.style.cssText = 'display:flex;flex-direction:column;gap:6px;margin-bottom:10px;';
+  container.innerHTML = '';
+  ALL_FIELDS.forEach(f => {
+    const label = (labelOverrides||{})[f.key] || f.label;
+    container.appendChild(fieldRow({
+      fkey: f.key, label,
+      checked: activeFields.includes(f.key) || f.required,
+      disabled: f.required, isCustom: false
+    }));
+  });
+  (customFields||[]).forEach(cf => {
+    container.appendChild(fieldRow({fkey: cf.key, label: cf.label, checked: true, disabled: false, isCustom: true}));
+  });
+}
+
+function openEditCatModal(catId) {
+  const allCats = [...BUILTIN_CATS, ...getCats()];
+  const c = allCats.find(x=>x.id===catId);
+  if(!c) return;
+  editingCatId = catId;
+
+  document.querySelector('#add-cat-modal .modal-title').textContent = '✏️ تعديل نوع الجهاز';
+  document.getElementById('new-cat-name').value = c.name;
+  document.getElementById('new-cat-icon').value = c.icon||'📂';
+  document.getElementById('new-cat-icon-btn').textContent = c.icon||'📂';
+  document.getElementById('emoji-picker').style.display = 'none';
+  document.getElementById('new-custom-field-input').value = '';
+  document.getElementById('cat-fields-section').style.display = '';
+
+  const activeFields = c.fields || DEFAULT_FIELDS;
+  const labelOverrides = c.fieldLabels || {};
+  const container = document.getElementById('new-cat-fields');
+  container.style.cssText = 'display:flex;flex-direction:column;gap:6px;margin-bottom:10px;';
+
+  renderCatFieldsInContainer(container, activeFields, labelOverrides, c.customFields||[]);
+
+  // swap save button to update
+  const saveBtn = document.getElementById('cat-save-btn');
+  saveBtn.textContent = '💾 تحديث';
+  saveBtn.onclick = updateCategory;
+
+  document.getElementById('add-cat-modal').classList.add('open');
+}
+
+function updateCategory() {
+  const name = document.getElementById('new-cat-name').value.trim();
+  if(!name){ toast('أدخل اسم الفئة','error'); return; }
+  const icon = document.getElementById('new-cat-icon').value.trim()||'📂';
+  const {stdFields, customFields, fieldLabels} = collectCatFields();
+
+  if(editingCatId==='laptop'||editingCatId==='pc'){
+    const overrides = S.get('builtinFields') || {};
+    overrides[editingCatId] = {fields: stdFields, fieldLabels, customFields};
+    S.set('builtinFields', overrides);
+    const bc = BUILTIN_CATS.find(b=>b.id===editingCatId);
+    if(bc){ bc.fields = stdFields; bc.fieldLabels = fieldLabels; bc.customFields = customFields; }
+    closeCatAddCatModal();
+    renderCategories();
+    toast('تم التحديث ✅','success');
+    return;
+  }
+
+  const cats = getCats();
+  const idx = cats.findIndex(c=>c.id===editingCatId);
+  if(idx===-1) return;
+  cats[idx] = {...cats[idx], name, icon, fields:stdFields, customFields, fieldLabels};
+  S.set('customCats', cats);
+  closeCatAddCatModal();
+  renderCategories();
+  renderCatSidebar();
+  updateFormTypeSelect();
+  toast('تم التحديث ✅','success');
+}
+
+function toggleAddCatForm() {
+  editingCatId = null;
+  document.querySelector('#add-cat-modal .modal-title').textContent = '➕ إضافة نوع جهاز';
+  document.getElementById('new-cat-name').value = '';
+  document.getElementById('new-cat-icon').value = '📂';
+  document.getElementById('new-cat-icon-btn').textContent = '📂';
+  document.getElementById('emoji-picker').style.display = 'none';
+  document.getElementById('new-custom-field-input').value = '';
+  const container = document.getElementById('new-cat-fields');
+  renderCatFieldsInContainer(container, DEFAULT_FIELDS, {}, []);
+  document.getElementById('cat-fields-section').style.display = '';
+  const saveBtn = document.getElementById('cat-save-btn');
+  saveBtn.textContent = 'حفظ';
+  saveBtn.onclick = addCategory;
+  document.getElementById('add-cat-modal').classList.add('open');
+}
+function closeCatAddCatModal() {
+  document.getElementById('add-cat-modal').classList.remove('open');
+  document.getElementById('emoji-picker').style.display='none';
+  document.getElementById('field-popup').style.display='none';
+}
+function toggleEmojiPicker() {
+  const p = document.getElementById('emoji-picker');
+  if(p.style.display !== 'none') { p.style.display='none'; return; }
+  const btn = document.getElementById('new-cat-icon-btn');
+  const r = btn.getBoundingClientRect();
+  p.style.top = (r.bottom + 6) + 'px';
+  p.style.left = Math.min(r.left, window.innerWidth - 240) + 'px';
+  p.style.display = 'block';
+}
+function pickEmoji(e) {
+  document.getElementById('new-cat-icon').value = e;
+  document.getElementById('new-cat-icon-btn').textContent = e;
+  document.getElementById('emoji-picker').style.display='none';
+}
+document.addEventListener('click', e => {
+  const p = document.getElementById('emoji-picker');
+  if(p && p.style.display !== 'none' && !p.contains(e.target) && e.target.id !== 'new-cat-icon-btn') {
+    p.style.display = 'none';
+  }
+});
+function toggleFieldPopup(btn) {
+  const p = document.getElementById('field-popup');
+  const open = p.style.display === 'none';
+  p.style.display = open ? 'block' : 'none';
+  if(open) { document.getElementById('new-custom-field-input').value=''; document.getElementById('new-custom-field-input').focus(); }
+}
+
+function removeModalCustomField(btn) {
+  const row = btn.closest('[data-custom-key]');
+  const key = row.dataset.customKey;
+  const data = getCatData(editingCatId);
+  const hasData = data.some(r => r[key] !== undefined && r[key] !== '');
+  if(hasData) {
+    showConfirm('بعض الأجهزة المحفوظة تحتوي على بيانات لهذا الحقل. هل تريد حذفه؟', () => row.remove());
+  } else {
+    row.remove();
+  }
+}
+
+function addCustomFieldToForm() {
+  const inp = document.getElementById('new-custom-field-input');
+  const label = inp.value.trim();
+  if(!label) return;
+  const key = 'custom_'+Date.now();
+  const box = document.getElementById('new-cat-fields');
+  const div = document.createElement('div');
+  div.style.cssText = 'display:grid;grid-template-columns:1fr auto auto auto;align-items:center;gap:8px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);background:#fff;direction:rtl;';
+  div.dataset.customKey = key;
+  div.dataset.customLabel = label;
+  div.dataset.currentLabel = label;
+  div.innerHTML = `
+    <span class="field-label-span" style="font-size:13px;text-align:right;">${esc(label)}</span>
+    <button type="button" class="btn-icon" style="font-size:12px;" onclick="inlineEditModalField(this)" title="تعديل الاسم">✏️</button>
+    <button type="button" class="btn-icon" style="font-size:12px;color:var(--danger);" onclick="removeModalCustomField(this)" title="حذف">✕</button>
+    <input type="checkbox" data-fkey="${key}" data-custom="1" checked style="width:16px;height:16px;flex-shrink:0;">`;
+  box.appendChild(div);
+  inp.value = '';
+  document.getElementById('field-popup').style.display='none';
+}
+
+function collectCatFields() {
+  const stdFields = [], customFields = [], fieldLabels = {};
+  document.getElementById('new-cat-fields').querySelectorAll('[data-fkey]').forEach(cb=>{
+    const row = cb.closest('[data-custom-key],[data-std-key]');
+    if(row?.dataset.customKey) {
+      if(cb.checked) customFields.push({key: row.dataset.customKey, label: row.dataset.currentLabel || row.dataset.customLabel});
+    } else {
+      if(cb.checked) stdFields.push(cb.dataset.fkey);
+      const orig = ALL_FIELDS.find(f=>f.key===cb.dataset.fkey);
+      const cur = row?.dataset.currentLabel;
+      if(orig && cur && cur !== orig.label) fieldLabels[cb.dataset.fkey] = cur;
+    }
+  });
+  return {stdFields, customFields, fieldLabels};
+}
+
+function inlineEditModalField(btn) {
+  const row = btn.closest('[data-custom-key],[data-std-key]');
+  const span = row.querySelector('.field-label-span');
+  const oldLabel = row.dataset.currentLabel;
+  span.innerHTML = `<input type="text" value="${esc(oldLabel)}" autocomplete="off" style="width:100%;font-size:13px;padding:2px 6px;border:1px solid var(--primary);border-radius:5px;direction:rtl;"
+    onblur="saveModalFieldLabel(this)"
+    onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value=this.dataset.old;this.blur();}">`;
+  const inp = span.querySelector('input');
+  inp.dataset.old = oldLabel;
+  inp.focus();
+}
+
+function saveModalFieldLabel(input) {
+  const newLabel = input.value.trim();
+  const row = input.closest('[data-custom-key],[data-std-key]');
+  const span = row.querySelector('.field-label-span');
+  if(!newLabel) { span.textContent = row.dataset.currentLabel; return; }
+  row.dataset.currentLabel = newLabel;
+  if(row.dataset.customKey) row.dataset.customLabel = newLabel;
+  span.textContent = newLabel;
+}
+
+function addCategory() {
+  const name = document.getElementById('new-cat-name').value.trim();
+  if(!name){ toast('أدخل اسم الفئة','error'); return; }
+  const icon = document.getElementById('new-cat-icon').value.trim()||'📂';
+  const {stdFields, customFields, fieldLabels} = collectCatFields();
+  const cats = getCats();
+  const id = 'cat_'+Date.now();
+  cats.push({ id, name, icon, fields: stdFields, customFields, fieldLabels });
+  S.set('customCats', cats);
+  closeCatAddCatModal();
+  renderCategories();
+  renderCatSidebar();
+  updateFormTypeSelect();
+  toast('تمت إضافة الفئة ✅','success');
+}
+
+function deleteCategory(catId) {
+  const devices = (S.get('catdata_'+catId)||[]).length;
+  const forms = (S.get('savedForms')||[]).filter(f=>f.type===catId).length;
+  const cat = getCats().find(c=>c.id===catId);
+  let warn = '';
+  if(devices) warn += `${devices} جهاز مسجّل`;
+  if(forms) warn += (warn?' و ':'')+`${forms} استمارة محفوظة`;
+  const msg = warn
+    ? `⚠️ هذه الفئة تحتوي على ${warn}. حذفها سيحذف جميع هذه البيانات نهائياً. هل أنت متأكد؟`
+    : `حذف فئة "${cat?.name}"؟`;
+  showConfirm(msg, ()=>{
+    const cats = getCats().filter(c=>c.id!==catId);
+    S.set('customCats', cats);
+    S.remove('catdata_'+catId);
+    renderCategories();
+    renderCatSidebar();
+    updateFormTypeSelect();
+    if(currentCatId===catId){ currentCatId=null; goTo('dash'); }
+    toast('تم الحذف');
+  });
+}
+
+function toggleCatField(catId, key, on) {
+  const cats = getCats();
+  const cat = cats.find(c=>c.id===catId); if(!cat) return;
+  cat.fields = cat.fields||[...DEFAULT_FIELDS];
+  if(on && !cat.fields.includes(key)) cat.fields.push(key);
+  if(!on) cat.fields = cat.fields.filter(k=>k!==key);
+  S.set('customCats', cats);
+  if(currentCatId===catId) renderCatTable();
+}
+
+// ── Default data ─────────────────────────────────
+function applyBuiltinFieldOverrides() {
+  const overrides = S.get('builtinFields') || {};
+  BUILTIN_CATS.forEach(bc => {
+    const o = overrides[bc.id];
+    if(!o) return;
+    if(o.fields) bc.fields = o.fields;
+    if(o.fieldLabels) bc.fieldLabels = o.fieldLabels;
+    if(o.customFields) bc.customFields = o.customFields;
+  });
+}
+
+function initData() {
+  if (!S.get('depts')) {
+    S.set('depts', ['الإدارة العامة','قسم المعلوماتية','قسم المالية','قسم الموارد البشرية','قسم الهندسة','قسم المشتريات']);
+  }
+  if (!S.get('deviceTypes')) {
+    S.set('deviceTypes', ['Laptop','PC Desktop','Tower PC','Printer','Server']);
+  }
+  if (!S.get('laptops')) S.set('laptops', []);
+  if (!S.get('pcs')) S.set('pcs', []);
+  if (!S.get('savedForms')) S.set('savedForms', []);
+}
+
+// ── Navigation ────────────────────────────────────
+const titles = {dash:'لوحة التحكم',laptops:'سجل اللابتوبات',pcs:'أجهزة الكمبيوتر المكتبية',forms:'إنشاء استمارة تسليم',archive:'الاستمارات المحفوظة',settings:'الإعدادات',logo:'شعار الشركة'};
+let formDirty = false;
+
+function markFormDirty() { formDirty = true; }
+function clearFormDirty() { formDirty = false; }
+
+function goTo(id) {
+  const leavingForms = document.getElementById('page-forms')?.classList.contains('active');
+  if(leavingForms && id !== 'forms' && formDirty) {
+    showConfirm('لم يتم حفظ الاستمارة. هل تريد المغادرة؟', () => { clearFormDirty(); _goTo(id); });
+    return;
+  }
+  _goTo(id);
+}
+
+function _goTo(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => { if(n.getAttribute('onclick').includes("'"+id+"'")) n.classList.add('active'); });
+  document.getElementById('topbar-title').textContent = titles[id] || '';
+  if(id==='dash') refreshDash();
+  if(id==='laptops') renderTable('laptop');
+  if(id==='pcs') renderTable('pc');
+  if(id==='settings'){ renderDepts(); renderCategories(); }
+  if(id==='logo') renderLogoPage();
+  if(id==='forms') initFormBuilder();
+  if(id==='archive') renderArchive();
+  if(id!=='forms') hidePreview();
+}
+
+// ── Toast ─────────────────────────────────────────
+function toast(msg, type='') {
+  const box = document.getElementById('toasts');
+  const t = document.createElement('div');
+  t.className = 'toast ' + type;
+  t.textContent = msg;
+  box.appendChild(t);
+  setTimeout(() => t.remove(), 3000);
+}
+
+// ── Dashboard ─────────────────────────────────────
+function refreshDash() {
+  const laptops = S.get('laptops') || [];
+  const pcs = S.get('pcs') || [];
+  const depts = S.get('depts') || [];
+  document.getElementById('stat-laptops').textContent = laptops.length;
+  document.getElementById('stat-pcs').textContent = pcs.length;
+  document.getElementById('stat-forms').textContent = (S.get('savedForms')||[]).length;
+  document.getElementById('stat-depts').textContent = depts.length;
+
+  const cats = getCats();
+  document.getElementById('dash-custom-stats').innerHTML = cats.map(c=>`
+    <div class="stat-card" onclick="goToCat('${c.id}')" style="cursor:pointer;">
+      <div class="stat-icon si-blue">${c.icon||'📂'}</div>
+      <div><div class="stat-value">${(S.get('catdata_'+c.id)||[]).length}</div><div class="stat-label">${esc(c.name)}</div></div>
+    </div>`).join('');
+
+  const catEntries = cats.flatMap(c=>(S.get('catdata_'+c.id)||[]).map(d=>({...d,_cat:c.id,_catName:c.name,_catIcon:c.icon||'📂'})));
+  const all = [
+    ...laptops.map(d=>({...d,_cat:'laptop',_catName:'لابتوب',_catIcon:'💻'})),
+    ...pcs.map(d=>({...d,_cat:'pc',_catName:'كمبيوتر مكتبي',_catIcon:'🖥️'})),
+    ...catEntries
+  ].sort((a,b) => (b.id||0)-(a.id||0)).slice(0,8);
+  const tbody = document.getElementById('dash-recent');
+  if(!all.length){ tbody.innerHTML='<tr><td colspan="6" style="text-align:center;padding:32px;color:var(--muted);">لا توجد أجهزة بعد</td></tr>'; return; }
+  tbody.innerHTML = all.map(d=>`
+    <tr>
+      <td>${esc(d.name)}</td>
+      <td><span class="badge b-dept">${esc(d.dept||'—')}</span></td>
+      <td style="font-family:monospace;font-size:12px;">${esc(d.mac||'—')}</td>
+      <td>${esc(d.devtype||'—')}</td>
+      <td><span class="badge ${d._cat==='laptop'?'b-laptop':d._cat==='pc'?'b-pc':'b-dept'}">${d._catIcon} ${esc(d._catName)}</span></td>
+    </tr>`).join('');
+}
+
+// ── Device table ──────────────────────────────────
+let editId = null, editCat = null;
+
+function renderTable(cat) {
+  const key = cat==='laptop'?'laptops':'pcs';
+  const searchId = cat+'-search';
+  const tbodyId = cat+'-tbody';
+  const q = (document.getElementById(searchId)?.value||'').toLowerCase();
+  let data = (S.get(key)||[]).filter(d =>
+    !q || [d.name,d.dept,d.sn,d.mac,d.devtype].some(v => (v||'').toLowerCase().includes(q))
+  );
+
+  const tbody = document.getElementById(tbodyId);
+  if(!data.length){
+    tbody.innerHTML=`<tr><td colspan="7"><div class="empty"><div class="e-icon">${cat==='laptop'?'💻':'🖥️'}</div><p>لا توجد أجهزة${q?' تطابق البحث':''}</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = data.map((d,i)=>{
+    const prevGroupId = i > 0 ? data[i-1].groupId : null;
+    const nextGroupId = i < data.length-1 ? data[i+1].groupId : null;
+    const isGroupStart = d.groupId && d.groupId !== prevGroupId;
+    const isGroupEnd   = d.groupId && d.groupId !== nextGroupId;
+    const bt = isGroupStart ? 'border-top:3px solid #94a3b8;' : '';
+    const bb = isGroupEnd   ? 'border-bottom:3px solid #94a3b8;' : '';
+    return `
+    <tr style="${d.groupId ? 'background:#f0f7ff;' : ''}${bt}${bb}">
+      <td style="color:var(--muted);font-size:12px;${bt}${bb}">${i+1}</td>
+      <td>${esc(d.name)}</td>
+      <td><span class="badge b-dept">${esc(d.dept)}</span></td>
+      <td style="font-family:monospace;font-size:12px;">${esc(d.sn)||'—'}</td>
+      <td style="font-family:monospace;font-size:12px;">${esc(d.mac)||'—'}</td>
+      <td>${esc(d.devtype)||'—'}</td>
+      <td>
+        <span style="display:flex;gap:6px;">
+          <button class="btn-icon" title="تعديل" onclick="openEditModal('${cat}',${d.id})">✏️</button>
+          <button class="btn-icon" title="حذف" onclick="deleteDevice('${cat}',${d.id})">🗑️</button>
+        </span>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+
+// ── Add / Edit modal ──────────────────────────────
+function populateDeptSelect(selId, current='') {
+  const depts = S.get('depts') || [];
+  const sel = document.getElementById(selId);
+  sel.innerHTML = depts.map(d=>`<option value="${esc(d)}" ${d===current?'selected':''}>${esc(d)}</option>`).join('');
+  if(!depts.length) sel.innerHTML='<option value="">— لا توجد دوائر —</option>';
+}
+
+function renderBuiltinCustomFields(cat, values={}) {
+  const bc = BUILTIN_CATS.find(b=>b.id===cat);
+  const stored = (S.get('builtinFields')||{})[cat] || {};
+  const customFields = (bc?.customFields?.length ? bc.customFields : null) || stored.customFields || [];
+  const box = document.getElementById('f-custom-fields');
+  box.innerHTML = customFields.map(cf=>`
+    <div class="form-group">
+      <label class="form-label">${esc(cf.label)}</label>
+      <input type="text" id="fc-${cf.key}" autocomplete="off" value="${esc(values[cf.key]||'')}">
+    </div>`).join('');
+}
+
+function openAddModal(cat) {
+  editId = null; editCat = cat;
+  document.getElementById('modal-title').textContent = cat==='laptop'?'إضافة لابتوب':'إضافة كمبيوتر مكتبي';
+  ['f-name','f-sn','f-mac'].forEach(id => document.getElementById(id).value='');
+  populateDeptSelect('f-dept');
+  document.getElementById('f-devtype').value='';
+  renderBuiltinCustomFields(cat);
+  document.getElementById('device-modal').classList.add('open');
+}
+
+function openEditModal(cat, id) {
+  const data = S.get(cat==='laptop'?'laptops':'pcs') || [];
+  const d = data.find(x => x.id===id); if(!d) return;
+  editId = id; editCat = cat;
+  document.getElementById('modal-title').textContent = 'تعديل الجهاز';
+  document.getElementById('f-name').value = d.name||'';
+  document.getElementById('f-sn').value = d.sn||'';
+  document.getElementById('f-mac').value = d.mac||'';
+  populateDeptSelect('f-dept', d.dept);
+  document.getElementById('f-devtype').value=d.devtype||'';
+  renderBuiltinCustomFields(cat, d);
+  document.getElementById('device-modal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('device-modal').classList.remove('open'); }
+
+function saveDevice() {
+  const name = document.getElementById('f-name').value.trim();
+  const dept = document.getElementById('f-dept').value;
+  if(!name||!dept){ toast('يرجى ملء الحقول الإلزامية','error'); return; }
+  const key = editCat==='laptop'?'laptops':'pcs';
+  let data = S.get(key)||[];
+  const bc = BUILTIN_CATS.find(b=>b.id===editCat);
+  const customVals = {};
+  (bc?.customFields||[]).forEach(cf => {
+    const el = document.getElementById('fc-'+cf.key);
+    if(el) customVals[cf.key] = el.value.trim();
+  });
+  const entry = { id: editId||Date.now(), name, dept, sn: document.getElementById('f-sn').value.trim(), mac: document.getElementById('f-mac').value.trim(), devtype: document.getElementById('f-devtype').value.trim(), ...customVals };
+  if(editId){ data = data.map(d=>d.id===editId?entry:d); toast('تم تحديث الجهاز ✅','success'); }
+  else { data.push(entry); toast('تمت الإضافة ✅','success'); }
+  S.set(key, data);
+  closeModal();
+  renderTable(editCat);
+}
+
+function deleteDevice(cat, id) {
+  showConfirm('هل تريد حذف هذا الجهاز؟', () => _deleteDevice(cat, id));
+}
+function _deleteDevice(cat, id) {
+  const key = cat==='laptop'?'laptops':'pcs';
+  S.set(key, (S.get(key)||[]).filter(d=>d.id!==id));
+  renderTable(cat);
+  toast('تم الحذف','');
+}
+
+// ── Departments ───────────────────────────────────
+function renderDepts() {
+  const depts = S.get('depts') || [];
+  const box = document.getElementById('dept-list');
+  const badge = document.getElementById('dept-count-badge');
+  if(badge) badge.textContent = depts.length;
+  const q = (document.getElementById('dept-search')?.value||'').trim().toLowerCase();
+  const filtered = q ? depts.filter(d=>d.toLowerCase().includes(q)) : depts;
+  if(!depts.length){
+    box.innerHTML='<p style="color:var(--muted);font-size:13px;padding:8px 0;">لا توجد دوائر بعد. أضف أولى.</p>';
+    return;
+  }
+  if(!filtered.length){
+    box.innerHTML='<p style="color:var(--muted);font-size:13px;padding:8px 0;">لا توجد نتائج.</p>';
+    return;
+  }
+  box.innerHTML = filtered.map(d=>{
+    const realIdx = depts.indexOf(d);
+    return `<div style="display:flex;align-items:center;gap:8px;padding:10px 14px;border-radius:9px;border:1px solid var(--border);margin-bottom:8px;background:#fff;">
+      <span class="dept-label" data-idx="${realIdx}" style="flex:1;font-size:14px;font-weight:500;">${esc(d)}</span>
+      <button class="btn-icon" onclick="inlineEditDept(${realIdx},this)" title="تعديل الاسم">✏️</button>
+      <button class="btn-icon" onclick="removeDept(${realIdx})" title="حذف">🗑️</button>
+    </div>`;
+  }).join('');
+}
+
+function openAddDeptModal() {
+  document.getElementById('new-dept-input').value='';
+  document.getElementById('add-dept-modal').classList.add('open');
+  setTimeout(()=>document.getElementById('new-dept-input').focus(),50);
+}
+function closeAddDeptModal() {
+  document.getElementById('add-dept-modal').classList.remove('open');
+}
+
+function addDept() {
+  const val = document.getElementById('new-dept-input').value.trim();
+  if(!val){ toast('أدخل اسم الدائرة','error'); return; }
+  const depts = S.get('depts') || [];
+  if(depts.includes(val)){ toast('الدائرة موجودة مسبقاً','error'); return; }
+  depts.push(val);
+  S.set('depts', depts);
+  closeAddDeptModal();
+  renderDepts();
+  toast('تمت إضافة الدائرة ✅','success');
+}
+
+function removeDept(i) {
+  showConfirm('حذف هذه الدائرة؟', () => _removeDept(i));
+}
+function inlineEditDept(idx, btn) {
+  const depts = S.get('depts') || [];
+  const oldName = depts[idx];
+  const span = btn.previousElementSibling;
+  span.innerHTML = `<input type="text" value="${esc(oldName)}" autocomplete="off" style="width:100%;font-size:14px;padding:2px 6px;border:1px solid var(--primary);border-radius:5px;"
+    onblur="saveDeptName(${idx},this.value)"
+    onkeydown="if(event.key==='Enter')this.blur();if(event.key==='Escape'){this.value='${esc(oldName)}';this.blur();}">`;
+  span.querySelector('input').focus();
+}
+
+function saveDeptName(idx, newName) {
+  newName = newName.trim();
+  const depts = S.get('depts') || [];
+  if(!newName || newName === depts[idx]) { renderDepts(); return; }
+  if(depts.includes(newName)) { toast('الاسم موجود مسبقاً','error'); renderDepts(); return; }
+  depts[idx] = newName;
+  S.set('depts', depts);
+  renderDepts();
+  toast('تم التعديل ✅','success');
+}
+
+function _removeDept(i) {
+  const depts = S.get('depts') || [];
+  depts.splice(i,1);
+  S.set('depts',depts);
+  renderDepts();
+  toast('تم الحذف');
+}
+
+// ── Device Types ──────────────────────────────────
+function populateDeviceTypeSelect(selId, current='') {
+  const types = S.get('deviceTypes') || [];
+  const sel = document.getElementById(selId);
+  if(!sel) return;
+  sel.innerHTML = ['<option value="">— اختر النوع —</option>', ...types.map(t=>`<option value="${esc(t)}" ${t===current?'selected':''}>${esc(t)}</option>`)].join('');
+}
+
+function renderDeviceTypes() {
+  const types = S.get('deviceTypes') || [];
+  const box = document.getElementById('devtype-list');
+  const badge = document.getElementById('devtype-count-badge');
+  if(badge) badge.textContent = types.length;
+  if(!box) return;
+  if(!types.length){ box.innerHTML='<p style="color:var(--muted);font-size:13px;padding:8px 0;">لا توجد أنواع بعد.</p>'; return; }
+  box.innerHTML = types.map((t,i)=>`
+    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:9px;border:1px solid var(--border);margin-bottom:8px;background:#fff;">
+      <span style="font-size:14px;font-weight:500;">${esc(t)}</span>
+      <button class="btn-icon" onclick="removeDeviceType(${i})" title="حذف">🗑️</button>
+    </div>`).join('');
+}
+
+function addDeviceType() {
+  const val = document.getElementById('new-devtype-input').value.trim();
+  if(!val){ toast('أدخل نوع الجهاز','error'); return; }
+  const types = S.get('deviceTypes') || [];
+  if(types.includes(val)){ toast('النوع موجود مسبقاً','error'); return; }
+  types.push(val);
+  S.set('deviceTypes', types);
+  document.getElementById('new-devtype-input').value='';
+  renderDeviceTypes();
+  toast('تمت الإضافة ✅','success');
+}
+
+function removeDeviceType(i) {
+  showConfirm('حذف هذا النوع؟', ()=>{
+    const types = S.get('deviceTypes') || [];
+    types.splice(i,1);
+    S.set('deviceTypes', types);
+    renderDeviceTypes();
+    toast('تم الحذف');
+  });
+}
+
+// ── Org name ──────────────────────────────────────
+function saveOrgName() {
+  S.set('org', {
+    name1: document.getElementById('org-name-1').value.trim(),
+    name2: document.getElementById('org-name-2').value.trim(),
+    dept:  document.getElementById('org-dept').value.trim(),
+  });
+  toast('تم حفظ اسم المؤسسة ✅','success');
+}
+
+// ── Logo ──────────────────────────────────────────
+function renderLogoPage() {
+  const logo = S.get('logo');
+  const box = document.getElementById('logo-preview-box');
+  if(logo) box.innerHTML=`<img src="${logo}" style="max-height:100px;max-width:240px;object-fit:contain;">`;
+  else box.innerHTML='<div style="font-size:36px;">🖼️</div><p style="font-size:13px;color:var(--muted);">انقر لرفع الشعار (PNG / JPG / SVG)</p>';
+  // populate org name fields
+  const org = S.get('org') || {};
+  document.getElementById('org-name-1').value = org.name1||'';
+  document.getElementById('org-name-2').value = org.name2||'';
+  document.getElementById('org-dept').value   = org.dept ||'';
+}
+
+function handleLogoUpload(e) {
+  const file = e.target.files[0]; if(!file) return;
+  const r = new FileReader();
+  r.onload = ev => { S.set('logo', ev.target.result); renderLogoPage(); toast('تم رفع الشعار ✅','success'); };
+  r.readAsDataURL(file);
+}
+
+function removeLogo() {
+  S.set('logo', null);
+  renderLogoPage();
+  toast('تم حذف الشعار');
+}
+
+// ── Form Builder ──────────────────────────────────
+let userRowCount = 0;
+
+function updateFormTypeSelect() {
+  const sel = document.getElementById('form-type');
+  if(!sel) return;
+  // remove previously added custom options
+  [...sel.options].forEach(o=>{ if(o.dataset.custom) o.remove(); });
+  getCats().forEach(c=>{
+    const o = document.createElement('option');
+    o.value = c.id;
+    o.textContent = c.icon + ' ' + c.name;
+    o.dataset.custom = '1';
+    sel.appendChild(o);
+  });
+}
+
+function initFormBuilder() {
+  const today = new Date().toISOString().split('T')[0];
+  if(!document.getElementById('form-date').value)
+    document.getElementById('form-date').value = today;
+  document.getElementById('fi-devtype').value='';
+  if(!document.getElementById('user-rows').children.length) {
+    userRowCount = 0;
+    addUserRow(); addUserRow(); addUserRow();
+  }
+  updateFormTypeSelect();
+}
+
+function addUserRow() {
+  userRowCount++;
+  const n = userRowCount;
+  const row = document.createElement('div');
+  row.id = 'ur-'+n;
+  row.style.cssText = 'display:grid;grid-template-columns:50px 1fr 1fr 36px;gap:8px;margin-bottom:8px;align-items:center;';
+  row.innerHTML = `
+    <input type="text" value="${n}" style="text-align:center;font-weight:600;background:#f8fafc;">
+    <input type="text" class="u-name" autocomplete="off">
+    <input type="text" class="u-empid" autocomplete="off">
+    <button class="btn-icon" onclick="this.parentElement.remove()" title="حذف">🗑️</button>`;
+  document.getElementById('user-rows').appendChild(row);
+}
+
+function clearForm() {
+  showConfirm('مسح جميع بيانات الاستمارة؟', _clearForm);
+}
+function _clearForm() {
+  clearFormDirty();
+  ['fi-devname','fi-nettype','rec-name','rec-empid'].forEach(id=>{
+    const el=document.getElementById(id); if(el) el.value='';
+  });
+  const sw=document.getElementById('fi-sw'); if(sw) sw.value='Antivirus / Adobe / Ms Office / Hasoob';
+  const sp=document.getElementById('fi-specs'); if(sp) sp.value='';
+  document.getElementById('user-rows').innerHTML='';
+  userRowCount=0;
+  initFormBuilder();
+  hidePreview();
+}
+
+function hidePreview() {
+  const pa = document.getElementById('form-preview-area');
+  if(pa) pa.style.display='none';
+  const ctrl = document.getElementById('print-controls');
+  if(ctrl) ctrl.style.display='';
+}
+
+function buildPreview(save=false) {
+  const type    = document.getElementById('form-type').value;
+  const date    = document.getElementById('form-date').value;
+  const devname = document.getElementById('fi-devname').value.trim();
+  const specs   = document.getElementById('fi-specs').value.trim();
+  const devtype = document.getElementById('fi-devtype').value.trim();
+  const nettype = document.getElementById('fi-nettype').value.trim();
+  const sw      = document.getElementById('fi-sw').value.trim();
+
+  if(!devname){ toast('يرجى إدخال اسم الجهاز','error'); return; }
+
+  const recName  = document.getElementById('rec-name').value.trim();
+  const recEmpid = document.getElementById('rec-empid').value.trim();
+
+  // collect users
+  const users = [];
+  document.querySelectorAll('#user-rows > div').forEach((row,i)=>{
+    const inputs = row.querySelectorAll('input');
+    users.push({ num: inputs[0]?.value||String(i+1), name: inputs[1]?.value||'', empid: inputs[2]?.value||'' });
+  });
+
+  const logo = S.get('logo');
+  const org  = S.get('org') || {};
+  let dateStr = '';
+  if(date) {
+    const d = new Date(date);
+    const dd = String(d.getDate()).padStart(2,'0');
+    const mm = String(d.getMonth()+1).padStart(2,'0');
+    const yyyy = d.getFullYear();
+    dateStr = `${dd}/${mm}/${yyyy}`;
+  }
+
+  const logoHtml = logo
+    ? `<img src="${logo}" style="max-height:280px;max-width:460px;object-fit:contain;">`
+    : `<div class="pp-logo-ph">شعار<br>الشركة</div>`;
+
+  const orgHtml = (org.name1||org.name2)
+    ? `<div style="font-size:14px;font-weight:800;">${esc(org.name1)}</div>
+       ${org.name2?`<div style="font-size:12px;color:var(--muted);">${esc(org.name2)}</div>`:''}
+       ${org.dept ?`<div style="font-size:11px;color:var(--muted);">${esc(org.dept)}</div>`:''}`
+    : '';
+
+  const userRows = users.map(u=>`
+    <tr>
+      <td style="text-align:center;width:50px;">${esc(u.num)}</td>
+      <td>${esc(u.name)}</td>
+      <td>${esc(u.empid)}</td>
+      <td class="sig-cell"></td>
+    </tr>`).join('');
+
+  const html = `
+    <div class="pp-head">
+      <div class="pp-logo-box">${logoHtml}</div>
+      <div class="pp-title">
+        ${orgHtml}
+        <h2 style="margin-top:${org.name1?'6px':'0'};">استمارة تسليم أجهزة ${esc(type)}</h2>
+      </div>
+      <div class="pp-date">
+        <div><strong>التاريخ:</strong> ${esc(dateStr)}</div>
+      </div>
+    </div>
+
+    <div class="section-label" style="margin-bottom:10px;">معلومات الجهاز</div>
+    <table class="pp" style="margin-bottom:22px;">
+      <thead>
+        <tr>
+          <th>اسم الجهاز</th>
+          <th>مواصفات الجهاز</th>
+          <th>نوع الجهاز</th>
+          <th>الأنظمة والبرامج</th>
+          <th>نوع الشبكة</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>${esc(devname)}</strong></td>
+          <td>${esc(specs)}</td>
+          <td>${esc(devtype)||esc(type)}</td>
+          <td>${esc(sw)}</td>
+          <td>${esc(nettype)}</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="section-label" style="margin-bottom:10px;">بيانات المستلم</div>
+    <table class="pp" style="max-width:500px;margin-bottom:22px;">
+      <thead><tr><th>اسم المستلم</th><th>الرقم الوظيفي</th><th style="min-width:140px;">التوقيع</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>${esc(recName)}</td>
+          <td>${esc(recEmpid)}</td>
+          <td class="sig-cell"></td>
+        </tr>
+      </tbody>
+    </table>
+
+    <div class="section-label" style="margin-bottom:10px;">قائمة المستخدمين</div>
+    <table class="pp sn-table" style="max-width:640px;">
+      <thead>
+        <tr>
+          <th style="width:50px;">#</th>
+          <th>الاسم</th>
+          <th>S/N</th>
+        </tr>
+      </thead>
+      <tbody>${userRows}</tbody>
+    </table>
+
+  `;
+
+  if(save) {
+    const forms = S.get('savedForms') || [];
+    const formId = Date.now();
+    forms.unshift({ id: formId, date, dateStr, devname, type, specs, devtype, nettype, sw, recName, users, html });
+    S.set('savedForms', forms);
+    clearFormDirty();
+    toast('تم حفظ الاستمارة ✅','success');
+    goTo('archive');
+  } else {
+    document.getElementById('printable-form').innerHTML = html;
+    document.getElementById('print-controls').style.display='none';
+    document.getElementById('form-preview-area').style.display='block';
+    document.getElementById('form-preview-area').scrollIntoView({behavior:'smooth'});
+  }
+}
+
+// ── Archive ───────────────────────────────────────
+function renderArchive() {
+  const all = S.get('savedForms') || [];
+  const q = (document.getElementById('archive-search')?.value||'').toLowerCase();
+  const forms = q ? all.filter(f =>
+    [f.devname, f.recName, f.dateStr||f.date, f.type, ...(f.users||[]).map(u=>u.name)]
+      .some(v => (v||'').toLowerCase().includes(q))
+  ) : all;
+  const badge = document.getElementById('archive-count');
+  if(badge) badge.textContent = all.length;
+  const tbody = document.getElementById('archive-tbody');
+  if(!forms.length){
+    tbody.innerHTML=`<tr><td colspan="8"><div class="empty"><div class="e-icon">🗂️</div><p>لا توجد استمارات محفوظة بعد</p></div></td></tr>`;
+    return;
+  }
+  tbody.innerHTML = forms.map((f,i)=>`
+    <tr>
+      <td style="color:var(--muted);font-size:12px;">${i+1}</td>
+      <td>${esc(f.dateStr||f.date)}</td>
+      <td>${esc(f.devname)}</td>
+      <td><span class="badge ${f.type==='Laptop'?'b-laptop':'b-pc'}">${f.type==='Laptop'?'💻 Laptop':'🖥️ PC'}</span></td>
+      <td>${esc(f.recName)||'—'}</td>
+      <td style="font-size:12px;color:var(--muted);">${(f.users||[]).filter(u=>u.name).map(u=>esc(u.name)).join('، ')||'—'}</td>
+      <td>
+        <span style="display:flex;gap:6px;justify-content:center;">
+          <button class="btn-icon" title="عرض" onclick="viewArchivedForm(${f.id})">👁️</button>
+          <button class="btn-icon" title="تعديل" onclick="editArchivedForm(${f.id})">✏️</button>
+          <button class="btn-icon" title="حذف" onclick="deleteArchivedForm(${f.id})">🗑️</button>
+        </span>
+      </td>
+    </tr>`).join('');
+}
+
+function viewArchivedForm(id) {
+  const forms = S.get('savedForms') || [];
+  const f = forms.find(x=>x.id===id); if(!f) return;
+  goTo('forms');
+  setTimeout(()=>{
+    document.getElementById('printable-form').innerHTML = f.html;
+    document.getElementById('print-controls').style.display='none';
+    document.getElementById('form-preview-area').style.display='block';
+    document.getElementById('form-preview-area').scrollIntoView({behavior:'smooth'});
+  },80);
+}
+
+function editArchivedForm(id) {
+  const forms = S.get('savedForms') || [];
+  const f = forms.find(x=>x.id===id); if(!f) return;
+  goTo('forms');
+  setTimeout(()=>{
+    document.getElementById('form-preview-area').style.display='none';
+    document.getElementById('print-controls').style.display='block';
+    if(f.devname) document.getElementById('fi-devname').value = f.devname;
+    if(f.specs)   document.getElementById('fi-specs').value   = f.specs;
+    document.getElementById('fi-devtype').value=f.devtype||'';
+    const nt=document.getElementById('fi-nettype'); if(nt&&f.nettype) nt.value=f.nettype;
+    const sw=document.getElementById('fi-sw'); if(sw&&f.sw) sw.value=f.sw;
+    // fill users
+    const ur = document.getElementById('user-rows');
+    if(ur && f.users?.length){
+      ur.innerHTML=''; userRowCount=0;
+      f.users.forEach(u=>{
+        addUserRow();
+        const row=ur.lastElementChild;
+        const nm=row.querySelector('.u-name'); if(nm) nm.value=u.name||'';
+        const ei=row.querySelector('.u-empid'); if(ei) ei.value=u.empid||'';
+      });
+    }
+    toast('تم تحميل الاستمارة للتعديل','success');
+  },80);
+}
+
+function deleteArchivedForm(id) {
+  showConfirm('حذف هذه الاستمارة من الأرشيف؟', () => _deleteArchivedForm(id));
+}
+function _deleteArchivedForm(id) {
+  S.set('savedForms', (S.get('savedForms')||[]).filter(f=>f.id!==id));
+  renderArchive();
+  toast('تم الحذف');
+}
+
+// ── Batch Add ─────────────────────────────────────
+let batchCat = null, batchRowCount = 0;
+
+function openBatchModal(cat) {
+  batchCat = cat;
+  batchRowCount = 0;
+  document.getElementById('batch-modal-title').textContent = cat==='laptop' ? 'إضافة مجموعة — لابتوبات' : 'إضافة مجموعة — كمبيوترات';
+  document.getElementById('b-devtype').value='';
+  document.getElementById('batch-rows').innerHTML = '';
+  // add 3 default rows
+  addBatchRow(); addBatchRow(); addBatchRow();
+  document.getElementById('batch-modal').classList.add('open');
+}
+
+function closeBatchModal() { document.getElementById('batch-modal').classList.remove('open'); }
+
+function addBatchRow() {
+  batchRowCount++;
+  const n = batchRowCount;
+  const depts = S.get('depts') || [];
+  const deptOpts = ['<option value="">— الدائرة —</option>', ...depts.map(d=>`<option value="${esc(d)}">${esc(d)}</option>`)].join('');
+  const row = document.createElement('div');
+  row.style.cssText = 'display:grid;grid-template-columns:40px 1fr 1fr 140px 130px 36px;gap:8px;margin-bottom:8px;align-items:center;';
+  row.innerHTML = `
+    <span style="text-align:center;font-size:13px;font-weight:700;color:var(--muted);">${n}</span>
+    <input type="text" class="br-name" autocomplete="off">
+    <select class="br-dept">${deptOpts}</select>
+    <input type="text" class="br-sn" autocomplete="off" style="font-family:monospace;font-size:12px;">
+    <input type="text" class="br-mac" autocomplete="off" style="font-family:monospace;font-size:12px;">
+    <button class="btn-icon" onclick="this.parentElement.remove()" title="حذف">🗑️</button>`;
+  document.getElementById('batch-rows').appendChild(row);
+}
+
+function saveBatch() {
+  const devtype = document.getElementById('b-devtype').value.trim();
+  const rows = document.querySelectorAll('#batch-rows > div');
+  const key = batchCat==='laptop'?'laptops':'pcs';
+  let data = S.get(key)||[];
+  let added = 0;
+  const groupId = Date.now();
+  rows.forEach(row => {
+    const name = row.querySelector('.br-name')?.value.trim();
+    const dept = row.querySelector('.br-dept')?.value;
+    if(!name) return; // skip empty rows
+    data.push({
+      id: Date.now() + Math.random(),
+      groupId,
+      name,
+      dept: dept||'',
+      sn:  row.querySelector('.br-sn')?.value.trim()||'',
+      mac: row.querySelector('.br-mac')?.value.trim()||'',
+      devtype,
+    });
+    added++;
+  });
+  S.set(key, data);
+  closeBatchModal();
+  renderTable(batchCat);
+  toast(`تمت إضافة ${added} جهاز ✅`,'success');
+}
+
+// ── Init ──────────────────────────────────────────
+loadAllData().then(() => {
+  applyBuiltinFieldOverrides();
+  initData();
+  renderCatSidebar();
+  goTo('dash');
+});
+// Always reload bundled logo fresh (picks up file changes)
+fetch('IMG_2235.png?t='+Date.now()).then(r=>r.blob()).then(blob=>{
+    const reader = new FileReader();
+    reader.onload = e => { S.set('logo', e.target.result); };
+    reader.readAsDataURL(blob);
+  }).catch(()=>{});
+refreshDash();
+
+// Close modal on overlay click
+document.getElementById('device-modal').addEventListener('click', function(e){ if(e.target===this) closeModal(); });
+
+document.getElementById('batch-modal').addEventListener('click', function(e){ if(e.target===this) closeBatchModal(); });
+document.getElementById('cat-modal').addEventListener('click', function(e){ if(e.target===this) closeCatModal(); });
+document.getElementById('cat-batch-modal').addEventListener('click', function(e){ if(e.target===this) closeCatBatchModal(); });
+document.getElementById('confirm-overlay').addEventListener('click', function(e){ if(e.target===this) closeConfirm(); });
+document.getElementById('add-cat-modal').addEventListener('click', function(e){ if(e.target===this) closeCatAddCatModal(); });
+document.getElementById('add-dept-modal').addEventListener('click', function(e){ if(e.target===this) closeAddDeptModal(); });
+document.addEventListener('keydown', e => { if(e.key==='Escape'){ closeModal(); closeBatchModal(); closeConfirm(); closeCatAddCatModal(); closeAddDeptModal(); } });
+</script>
+</body>
+</html>
